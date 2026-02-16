@@ -5,6 +5,9 @@ import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    server: {
+        host: true, // 0.0.0.0 для доступа с хоста (Docker)
+    },
     plugins: [
         laravel({
             input: ['resources/js/app.ts'],

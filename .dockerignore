@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules
+vendor
+
+# Build / cache
+public/build
+public/hot
+bootstrap/ssr
+storage/*.key
+storage/pail
+.phpunit.cache
+.phpunit.result.cache
+
+# Env and IDE
+.env
+.env.*
+!.env.example
+.idea
+.vscode
+.nova
+.zed
+.fleet
+
+# Docs and misc
+*.md
+!README.md
+Dockerfile*
+docker-compose*
+.docker
+
+# Tests
+tests
+phpunit.xml
+.phpunit.cache
+
+# Wayfinder generated (will be regenerated)
+resources/js/actions
+resources/js/routes
+resources/js/wayfinder

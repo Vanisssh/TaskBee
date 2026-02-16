@@ -26,3 +26,10 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Docker / volumes
+pgdata
+redisdata
+.env.local
+.env.*.local
+docker-compose.override.yml

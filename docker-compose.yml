@@ -1,0 +1,93 @@
+# Лабораторная работа 1. Docker и Docker Compose
+# Проект: ИС быстрого поиска и заказа профессиональных услуг (TaskBee)
+# Сервисы: PostgreSQL, Laravel (backend), Vue/Vite (frontend), Redis (кэш/очереди)
+
+version: '3.8'
+
+services:
+  db:
+    image: postgres:18
+    container_name: taskbee-db
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: taskbee-redis
+    volumes:
+      - redisdata:/data
+    networks:
+      - app-network
+    # Адаптация под тематику: кэш поиска исполнителей, очереди заказов, сессии
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: taskbee-backend
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      APP_KEY: ${APP_KEY}
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_URL: http://localhost:${APP_PORT:-8000}
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      VITE_DEV_SERVER_URL: http://localhost:5173
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: taskbee-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_DEV_SERVER_HOST: 0.0.0.0
+      VITE_APP_NAME: "${APP_NAME:-TaskBee}"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  app-network:
+    driver: bridge
