@@ -116,6 +116,11 @@ depends_on не гарантирует, что сервис готов к раб
 
 Подключение к PostgreSQL задаётся в `.env` (`DB_CONNECTION=pgsql`, `DB_HOST`, `DB_DATABASE` и т.д.) и используется автоматически.
 
+### Документация (ЛР2)
+
+- **Схема БД (ER-диаграмма):** [docs/db_schema.png](docs/db_schema.png) — сущности users, service_categories, services, specialists, orders, reviews и связи между ними.
+- **API (OpenAPI 3.0):** [docs/openapi.yaml](docs/openapi.yaml) — описание всех эндпоинтов `/api/v1` (categories, services, orders, reviews). Можно открыть в Swagger UI или Scalar для интерактивной документации.
+
 ### Примеры запросов (curl)
 
 ```bash

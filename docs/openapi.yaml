@@ -1,0 +1,483 @@
+openapi: 3.0.3
+info:
+  title: TaskBee API
+  description: |
+    REST API платформы быстрого поиска и заказа профессиональных услуг (ЛР2).
+    Базовый URL при локальном запуске: `http://localhost:8000/api/v1`
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Локальный сервер
+
+paths:
+  /categories:
+    get:
+      summary: Список категорий услуг
+      operationId: listCategories
+      tags: [Categories]
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ServiceCategory' }
+    post:
+      summary: Создать категорию
+      operationId: createCategory
+      tags: [Categories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name: { type: string, maxLength: 255 }
+                slug: { type: string, maxLength: 255 }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ServiceCategory' }
+        '422':
+          description: Ошибка валидации
+
+  /categories/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      summary: Категория по ID (с услугами)
+      operationId: showCategory
+      tags: [Categories]
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ServiceCategoryWithServices' }
+        '404':
+          description: Не найдено
+    put:
+      summary: Обновить категорию
+      operationId: updateCategory
+      tags: [Categories]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 255 }
+                slug: { type: string, maxLength: 255 }
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ServiceCategory' }
+        '404':
+          description: Не найдено
+        '422':
+          description: Ошибка валидации
+    delete:
+      summary: Удалить категорию
+      operationId: destroyCategory
+      tags: [Categories]
+      responses:
+        '204':
+          description: Удалено
+        '404':
+          description: Не найдено
+
+  /services:
+    get:
+      summary: Список услуг
+      operationId: listServices
+      tags: [Services]
+      parameters:
+        - name: category_id
+          in: query
+          schema: { type: integer }
+          description: Фильтр по ID категории
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Service' }
+    post:
+      summary: Создать услугу
+      operationId: createService
+      tags: [Services]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_category_id, name]
+              properties:
+                service_category_id: { type: integer }
+                name: { type: string, maxLength: 255 }
+                description: { type: string, nullable: true }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Service' }
+        '422':
+          description: Ошибка валидации
+
+  /services/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      summary: Услуга по ID
+      operationId: showService
+      tags: [Services]
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Service' }
+        '404':
+          description: Не найдено
+    put:
+      summary: Обновить услугу
+      operationId: updateService
+      tags: [Services]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service_category_id: { type: integer }
+                name: { type: string, maxLength: 255 }
+                description: { type: string, nullable: true }
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Service' }
+        '404':
+          description: Не найдено
+        '422':
+          description: Ошибка валидации
+    delete:
+      summary: Удалить услугу
+      operationId: destroyService
+      tags: [Services]
+      responses:
+        '204':
+          description: Удалено
+        '404':
+          description: Не найдено
+
+  /orders:
+    get:
+      summary: Список заказов
+      operationId: listOrders
+      tags: [Orders]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [new, assigned, in_progress, completed, cancelled]
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Order' }
+    post:
+      summary: Создать заказ
+      operationId: createOrder
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client_id, service_id]
+              properties:
+                client_id: { type: integer }
+                service_id: { type: integer }
+                address: { type: string, nullable: true }
+                description: { type: string, nullable: true }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Order' }
+        '422':
+          description: Ошибка валидации
+
+  /orders/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      summary: Заказ по ID (с связями)
+      operationId: showOrder
+      tags: [Orders]
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Order' }
+        '404':
+          description: Не найдено
+    put:
+      summary: Обновить заказ
+      operationId: updateOrder
+      tags: [Orders]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                specialist_id: { type: integer, nullable: true }
+                status: { type: string, enum: [new, assigned, in_progress, completed, cancelled] }
+                address: { type: string, nullable: true }
+                description: { type: string, nullable: true }
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Order' }
+        '404':
+          description: Не найдено
+        '422':
+          description: Ошибка валидации
+    delete:
+      summary: Удалить заказ
+      operationId: destroyOrder
+      tags: [Orders]
+      responses:
+        '204':
+          description: Удалено
+        '404':
+          description: Не найдено
+
+  /reviews:
+    get:
+      summary: Список отзывов
+      operationId: listReviews
+      tags: [Reviews]
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Review' }
+    post:
+      summary: Создать отзыв
+      operationId: createReview
+      tags: [Reviews]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [order_id, user_id, rating]
+              properties:
+                order_id: { type: integer }
+                user_id: { type: integer }
+                rating: { type: integer, minimum: 1, maximum: 5 }
+                comment: { type: string, nullable: true }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Review' }
+        '422':
+          description: Ошибка валидации (в т.ч. заказ не в статусе completed)
+
+  /reviews/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      summary: Отзыв по ID
+      operationId: showReview
+      tags: [Reviews]
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Review' }
+        '404':
+          description: Не найдено
+    put:
+      summary: Обновить отзыв
+      operationId: updateReview
+      tags: [Reviews]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating: { type: integer, minimum: 1, maximum: 5 }
+                comment: { type: string, nullable: true }
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Review' }
+        '404':
+          description: Не найдено
+        '422':
+          description: Ошибка валидации
+    delete:
+      summary: Удалить отзыв
+      operationId: destroyReviewById
+      tags: [Reviews]
+      responses:
+        '204':
+          description: Удалено
+        '404':
+          description: Не найдено
+
+components:
+  schemas:
+    ServiceCategory:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ServiceCategoryWithServices:
+      allOf:
+        - { $ref: '#/components/schemas/ServiceCategory' }
+        - type: object
+          properties:
+            services:
+              type: array
+              items: { $ref: '#/components/schemas/Service' }
+
+    Service:
+      type: object
+      properties:
+        id: { type: integer }
+        service_category_id: { type: integer }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        category: { $ref: '#/components/schemas/ServiceCategory' }
+
+    Order:
+      type: object
+      properties:
+        id: { type: integer }
+        client_id: { type: integer }
+        service_id: { type: integer }
+        specialist_id: { type: integer, nullable: true }
+        status: { type: string, enum: [new, assigned, in_progress, completed, cancelled] }
+        address: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        service: { $ref: '#/components/schemas/Service' }
+        client: { type: object, properties: { id: { type: integer }, name: { type: string } } }
+        specialist: { type: object, nullable: true }
+
+    Review:
+      type: object
+      properties:
+        id: { type: integer }
+        order_id: { type: integer }
+        user_id: { type: integer }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        order: { type: object }
+        user: { type: object, properties: { id: { type: integer }, name: { type: string } } }

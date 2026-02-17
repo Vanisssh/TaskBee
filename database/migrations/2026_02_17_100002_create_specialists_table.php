@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
             $table->text('bio')->nullable();
-            $table->unsignedDecimal('rating_avg', 3, 2)->default(0)->comment('Денормализованный рейтинг для быстрого поиска');
+            $table->decimal('rating_avg', 3, 2)->default(0)->comment('Денормализованный рейтинг для быстрого поиска');
             $table->timestamps();
         });
     }
