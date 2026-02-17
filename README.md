@@ -101,3 +101,37 @@ depends_on не гарантирует, что сервис готов к раб
 -ошибки подключения;
 -нестабильный запуск системы.
 
+---
+
+## Лабораторная работа 2. Работа с PostgreSQL и ORM
+
+**Цель:** проектирование реляционной БД, интеграция ORM (Eloquent) с Laravel и управление миграциями для структуры данных платформы быстрого поиска и заказа услуг.
+
+### ORM в проекте
+
+Вместо SQLAlchemy/Alembic используется стек Laravel:
+
+- **Eloquent** — ORM: работа с БД через модели (например, `$order->service->name` вместо ручных JOIN).
+- **Миграции Laravel** — версионирование схемы БД (аналог Alembic): `php artisan migrate`, `php artisan migrate:rollback`.
+
+Подключение к PostgreSQL задаётся в `.env` (`DB_CONNECTION=pgsql`, `DB_HOST`, `DB_DATABASE` и т.д.) и используется автоматически.
+
+### Примеры запросов (curl)
+
+```bash
+# Создать категорию
+curl -X POST http://localhost:8000/api/v1/categories \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Ремонт","slug":"remont"}'
+
+# Создать услугу
+curl -X POST http://localhost:8000/api/v1/services \
+  -H "Content-Type: application/json" \
+  -d '{"service_category_id":1,"name":"Установка сантехники","description":"Монтаж и замена"}'
+
+# Создать заказ
+curl -X POST http://localhost:8000/api/v1/orders \
+  -H "Content-Type: application/json" \
+  -d '{"client_id":1,"service_id":1,"address":"ул. Примерная, 1","description":"Замена смесителя"}'
+```
+

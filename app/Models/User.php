@@ -49,4 +49,9 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
+
+    public function specialist(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Specialist::class);
+    }
 }
