@@ -2,8 +2,9 @@ openapi: 3.0.3
 info:
   title: TaskBee API
   description: |
-    REST API платформы быстрого поиска и заказа профессиональных услуг (ЛР2).
-    Базовый URL при локальном запуске: `http://localhost:5000/api/v1` (Flask / Gunicorn)
+    REST API платформы быстрого поиска и заказа профессиональных услуг (ЛР2–3).
+    Валидация запросов — Marshmallow; интерактивная документация Swagger UI: `http://localhost:5000/api/docs/`.
+    Базовый URL ресурсов v1: `http://localhost:5000/api/v1` (Flask / Gunicorn).
   version: 1.0.0
 
 servers:
@@ -422,6 +423,227 @@ paths:
         '404':
           description: Не найдено
 
+  /users:
+    get:
+      summary: Список пользователей (клиентов)
+      operationId: listUsers
+      tags: [Users]
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/User' }
+    post:
+      summary: Создать пользователя
+      operationId: createUser
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email]
+              properties:
+                name: { type: string, maxLength: 255 }
+                email: { type: string, format: email }
+                password_hash: { type: string, nullable: true, description: заглушка в учебном проекте }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/User' }
+        '422':
+          description: Ошибка валидации
+
+  /users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      summary: Пользователь по ID
+      operationId: showUser
+      tags: [Users]
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/User' }
+        '404':
+          description: Не найдено
+
+  /specialists:
+    get:
+      summary: Список исполнителей (по убыванию рейтинга)
+      operationId: listSpecialists
+      tags: [Specialists]
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Specialist' }
+    post:
+      summary: Создать профиль исполнителя
+      operationId: createSpecialist
+      tags: [Specialists]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id: { type: integer }
+                bio: { type: string, nullable: true }
+                rating_avg:
+                  type: number
+                  format: float
+                  minimum: 0
+                  maximum: 5
+                  default: 0
+                  description: денормализованный средний рейтинг
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Specialist' }
+        '422':
+          description: Ошибка валидации
+
+  /specialists/search:
+    get:
+      summary: Подбор исполнителей (мин. рейтинг, категория, лимит)
+      operationId: searchSpecialists
+      tags: [Specialists]
+      parameters:
+        - name: min_rating
+          in: query
+          schema: { type: number, minimum: 0, maximum: 5 }
+          description: Минимальный средний рейтинг (0–5)
+        - name: category_id
+          in: query
+          schema: { type: integer }
+          description: Исполнители с завершёнными заказами в этой категории услуг
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Specialist' }
+                  meta:
+                    type: object
+                    properties:
+                      count: { type: integer }
+                      limit: { type: integer }
+        '422':
+          description: Некорректные параметры (например min_rating)
+
+  /specialists/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      summary: Исполнитель по ID
+      operationId: showSpecialist
+      tags: [Specialists]
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Specialist' }
+        '404':
+          description: Не найдено
+    put:
+      summary: Обновить исполнителя
+      operationId: updateSpecialist
+      tags: [Specialists]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bio: { type: string, nullable: true }
+                rating_avg: { type: number, minimum: 0, maximum: 5, nullable: true }
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Specialist' }
+        '404':
+          description: Не найдено
+        '422':
+          description: Ошибка валидации
+    delete:
+      summary: Удалить исполнителя
+      operationId: destroySpecialist
+      tags: [Specialists]
+      responses:
+        '204':
+          description: Удалено
+        '404':
+          description: Не найдено
+
+  /stats/summary:
+    get:
+      summary: Сводные метрики платформы (заказы по статусам, справочники, средние рейтинги)
+      operationId: statsSummary
+      tags: [Stats]
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/PlatformSummary' }
+
 components:
   schemas:
     ServiceCategory:
@@ -481,3 +703,41 @@ components:
         updated_at: { type: string, format: date-time }
         order: { type: object }
         user: { type: object, properties: { id: { type: integer }, name: { type: string } } }
+
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+
+    Specialist:
+      type: object
+      properties:
+        id: { type: integer }
+        user_id: { type: integer }
+        bio: { type: string, nullable: true }
+        rating_avg: { type: number, format: float }
+        user:
+          type: object
+          nullable: true
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            email: { type: string, format: email }
+
+    PlatformSummary:
+      type: object
+      properties:
+        orders_by_status:
+          type: object
+          additionalProperties: { type: integer }
+          description: Счётчики по статусам заказа
+        total_orders: { type: integer }
+        total_users: { type: integer }
+        total_specialists: { type: integer }
+        total_service_categories: { type: integer }
+        total_services: { type: integer }
+        total_reviews: { type: integer }
+        avg_review_rating: { type: number, format: float, nullable: true }
+        avg_specialist_rating: { type: number, format: float, nullable: true }

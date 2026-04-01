@@ -13,10 +13,14 @@
 <body>
   <h1>TaskBee</h1>
   <p>Информационная система быстрого поиска и заказа профессиональных услуг.</p>
-  <p>Backend API: <code id="api"></code></p>
+  <p>REST API: <code id="api"></code></p>
+  <p>Swagger UI (ЛР3): <a id="docs" href="#">/api/docs/</a></p>
   <script>
     const host = location.hostname || 'localhost';
-    document.getElementById('api').textContent = 'http://' + host + ':5000/';
+    const base = 'http://' + host + ':5000';
+    document.getElementById('api').textContent = base + '/api/v1/';
+    const a = document.getElementById('docs');
+    a.href = base + '/api/docs/';
   </script>
 </body>
 </html>
