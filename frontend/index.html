@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskBee</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+    h1 { color: #1a1a1a; }
+    code { background: #f4f4f5; padding: 0.15rem 0.35rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>TaskBee</h1>
+  <p>Информационная система быстрого поиска и заказа профессиональных услуг.</p>
+  <p>Backend API: <code id="api"></code></p>
+  <script>
+    const host = location.hostname || 'localhost';
+    document.getElementById('api').textContent = 'http://' + host + ':5000/';
+  </script>
+</body>
+</html>

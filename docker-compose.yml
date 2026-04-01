@@ -1,14 +1,14 @@
-
-# Сервисы: PostgreSQL, Laravel (backend), Vue/Vite (frontend), Redis (кэш/очереди)
+# TaskBee — ЛР1: Docker Compose (PostgreSQL, Flask backend, frontend, Redis)
+# ИС быстрого поиска и заказа профессиональных услуг
 
 services:
   db:
     image: postgres:18
     container_name: taskbee-db
     environment:
-      POSTGRES_USER: ${DB_USERNAME:-taskbee_user}
+      POSTGRES_USER: ${DB_USER:-taskbee_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-taskbee_secret}
-      POSTGRES_DB: ${DB_DATABASE:-taskbee}
+      POSTGRES_DB: ${DB_NAME:-taskbee}
     volumes:
       - pgdata:/var/lib/postgresql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -29,32 +29,22 @@ services:
       - redisdata:/data
     networks:
       - app-network
-    # Адаптация под тематику: кэш поиска исполнителей, очереди заказов, сессии
 
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: taskbee-backend
     ports:
-      - "${APP_PORT:-8000}:8000"
+      - "${BACKEND_PORT:-5000}:5000"
     environment:
-      APP_KEY: ${APP_KEY:-}
-      APP_ENV: ${APP_ENV:-local}
-      APP_DEBUG: ${APP_DEBUG:-true}
-      APP_URL: http://localhost:${APP_PORT:-8000}
-      DB_CONNECTION: pgsql
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_DATABASE: ${DB_DATABASE:-taskbee}
-      DB_USERNAME: ${DB_USERNAME:-taskbee_user}
-      DB_PASSWORD: ${DB_PASSWORD:-taskbee_secret}
+      POSTGRES_USER: ${DB_USER:-taskbee_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-taskbee_secret}
+      POSTGRES_DB: ${DB_NAME:-taskbee}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
       REDIS_HOST: redis
-      REDIS_PORT: 6379
-      CACHE_STORE: redis
-      SESSION_DRIVER: redis
-      QUEUE_CONNECTION: redis
-      VITE_DEV_SERVER_URL: http://localhost:5173
+      REDIS_PORT: "6379"
     depends_on:
       db:
         condition: service_healthy
@@ -65,17 +55,11 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: Dockerfile.frontend
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: taskbee-frontend
     ports:
-      - "5173:5173"
-    environment:
-      VITE_DEV_SERVER_HOST: 0.0.0.0
-      VITE_APP_NAME: "${APP_NAME:-TaskBee}"
-    volumes:
-      - .:/app
-      - /app/node_modules
+      - "${FRONTEND_PORT:-3000}:80"
     depends_on:
       - backend
     networks:

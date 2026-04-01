@@ -1,142 +1,114 @@
 # TaskBee — информационная система быстрого поиска и заказа профессиональных услуг
 
-Проект посвящён разработке платформы для взаимодействия заказчиков и самозанятых специалистов: оперативный подбор исполнителей по заданным параметрам и минимизация издержек поиска услуг.
+Платформа для взаимодействия заказчиков и самозанятых специалистов: быстрый подбор исполнителей и снижение издержек поиска услуг.
 
-**Стек:** Laravel (backend), Vue 3 + Inertia (frontend), PostgreSQL, Redis, Docker Compose.
+**Стек:** Python 3.11 (Flask, SQLAlchemy, Alembic), PostgreSQL, Redis, Docker Compose, статический фронтенд (Nginx).
 
 ---
 
 ## Лабораторная работа 1. Docker и Docker Compose
 
-**Цель:** контейнеризация компонентов системы с изоляцией БД, бэкенда, фронтенда и сервиса кэширования.
+**Цель:** контейнеризация компонентов: БД, бэкенд (Flask), фронтенд, сервис адаптации под тематику (Redis).
 
-### Описание сервисов
+### Сервисы
 
-**db**  PostgreSQL 18. Хранит данные приложения: пользователи, заказы, исполнители, сессии. Данные сохраняются в volume `pgdata`. При первом запуске выполняется `db/init.sql` (расширение uuid-ossp). 
-**redis**  Redis 7. Кэш поиска, сессии и очереди задач. Используется backend'ом для ускорения ответов и фоновой обработки («быстрый поиск и заказ услуг»). Данные в volume `redisdata`. 
-**backend**  Laravel (PHP 8.4). REST API, бизнес-логика, аутентификация. При старте выполняет миграции, отдаёт веб-интерфейс и подключается к db и redis по именам хостов. Порт 8000. 
-**frontend**  Vue 3 + Vite. Dev-сервер для разработки: горячая перезагрузка и сборка клиентской части. Используется при разработке; в production ассеты собираются в образ backend. Порт 5173. 
+| Сервис | Описание |
+|--------|----------|
+| **db** | PostgreSQL 18. Данные в volume `pgdata`. Монтирование в `/var/lib/postgresql` (совместимо с образом 18+). При первом запуске выполняется `db/init.sql` (расширение `uuid-ossp`). |
+| **redis** | Redis 7 — кэш, очереди, сессии (адаптация под «быстрый поиск и заказ услуг»). Volume `redisdata`. Проверка: `GET /redis-check` на backend. |
+| **backend** | Flask + Gunicorn, порт **5000**. SQLAlchemy + Alembic, REST API `/api/v1`. После старта выполняется `alembic upgrade head`. |
+| **frontend** | Nginx со статической страницей, порт **3000** (внутри контейнера 80). |
 
-### Архитектура (схема)
+### Архитектура
 
-
-                    
-                                                    
-                                                                             
-  localhost:5173 ─────► frontend (Vue/Vite)                                  
-                              │                                                
-                              │ depends_on                                     
-                              ▼                                                
-  localhost:8000 ─────► backend (Laravel)  ──────► db (PostgreSQL)           
-                              │                      ▲                         
-                              │                      │ pgdata volume          
-                              │ depends_on           │                         
-                              ▼                      │                         
-                        redis (Redis)                │                         
-                              │                      │ redisdata volume        
-                              └──────────────────────┘                         
-                    
-
-
+```
+frontend :3000 ──► backend :5000 ──┬──► db (PostgreSQL)
+                                   ├──► redis
+                                   └──► app-network (bridge)
+```
 
 ### Первый запуск
 
-1. Клонировать репозиторий и перейти в каталог проекта.
+1. Скопируйте `.env.example` в `.env` и задайте `DB_PASSWORD` и при необходимости остальные переменные.
 
-2. Создать файл `.env` из примера и задать секреты:
-
-   bash
-   cp .env.example .env
-   
-
-   Обязательно задать:
-   - `DB_PASSWORD` — пароль PostgreSQL (в `.env` как `DB_PASSWORD`);
-   - `APP_KEY` — ключ Laravel: выполнить локально `php artisan key:generate` и скопировать в `.env` или сгенерировать строку вида `base64:...` и подставить в `.env`.
-
-3. Запустить все сервисы:
-
+2. Запуск:
    ```bash
-   docker-compose up --build -d
+   docker compose up --build -d
    ```
 
-4. Проверить статус:
-
+3. Проверка:
    ```bash
-   docker-compose ps
-   docker-compose logs db
-   docker-compose logs backend
+   docker compose ps
+   docker compose logs db
+   docker compose logs backend
    ```
 
-5. **Открыть в браузере:**
-   - Backend (Laravel): <http://localhost:8000>
-   - Frontend (Vite dev): <http://localhost:5173>
+4. В браузере: фронтенд <http://localhost:3000>, API <http://localhost:5000/health>, БД <http://localhost:5000/db-check>.
 
-### Адаптация под научную тематику
+5. Подключение к PostgreSQL из контейнера backend:
+   ```bash
+   docker compose exec backend bash
+   apt-get update && apt-get install -y postgresql-client
+   psql -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+   ```
 
-Добавлен сервис **Redis** в контексте ИС быстрого поиска и заказа услуг:
-
-- **Кэширование** результатов поиска исполнителей по параметрам (категория, геолокация, рейтинг).
-- **Очереди** для асинхронной обработки заявок и уведомлений (подбор исполнителей, подтверждение заказа).
-- **Сессии** пользователей для масштабирования backend по нескольким экземплярам.
-
-Данные Redis сохраняются в volume `redisdata`.
-
----
-
-## Вопросы для самопроверки (ЛР1)
-
-1. Почему данные PostgreSQL нельзя хранить только в файловой системе контейнера без volume?
--Потому что контейнеры не предназначены для долговременного хранения данных.
-При удалении или пересоздании контейнера все данные будут потеряны.
-Использование Docker Volume гарантирует сохранность данных независимо от жизненного цикла контейнера.
-2. Как изменить конфигурацию, чтобы фронтенд общался с бэкендом через Nginx?
-Необходимо:
--Добавить сервис nginx;
--Прокинуть конфигурацию reverse proxy;
--Убрать прямой доступ от frontend к backend.
-3. Какие риски даёт использование `depends_on` без health-check у БД?
-depends_on не гарантирует, что сервис готов к работе, только что он запущен.
-Риски:
--backend стартует раньше, чем БД готова принимать соединения;
--ошибки подключения;
--нестабильный запуск системы.
-
----
-
-## Лабораторная работа 2. Работа с PostgreSQL и ORM
-
-**Цель:** проектирование реляционной БД, интеграция ORM (Eloquent) с Laravel и управление миграциями для структуры данных платформы быстрого поиска и заказа услуг.
-
-### ORM в проекте
-
-Вместо SQLAlchemy/Alembic используется стек Laravel:
-
-- **Eloquent** — ORM: работа с БД через модели (например, `$order->service->name` вместо ручных JOIN).
-- **Миграции Laravel** — версионирование схемы БД (аналог Alembic): `php artisan migrate`, `php artisan migrate:rollback`.
-
-Подключение к PostgreSQL задаётся в `.env` (`DB_CONNECTION=pgsql`, `DB_HOST`, `DB_DATABASE` и т.д.) и используется автоматически.
-
-### Документация (ЛР2)
-
-- **Схема БД (ER-диаграмма):** [docs/db_schema.png](docs/db_schema.png) — сущности users, service_categories, services, specialists, orders, reviews и связи между ними.
-- **API (OpenAPI 3.0):** [docs/openapi.yaml](docs/openapi.yaml) — описание всех эндпоинтов `/api/v1` (categories, services, orders, reviews). Можно открыть в Swagger UI или Scalar для интерактивной документации.
-
-### Примеры запросов (curl)
+### Локальная разработка backend (без Docker)
 
 ```bash
-# Создать категорию
-curl -X POST http://localhost:8000/api/v1/categories \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Ремонт","slug":"remont"}'
-
-# Создать услугу
-curl -X POST http://localhost:8000/api/v1/services \
-  -H "Content-Type: application/json" \
-  -d '{"service_category_id":1,"name":"Установка сантехники","description":"Монтаж и замена"}'
-
-# Создать заказ
-curl -X POST http://localhost:8000/api/v1/orders \
-  -H "Content-Type: application/json" \
-  -d '{"client_id":1,"service_id":1,"address":"ул. Примерная, 1","description":"Замена смесителя"}'
+cd backend
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+pip install -r requirements.txt
+set POSTGRES_HOST=localhost
+set POSTGRES_USER=...
+set POSTGRES_PASSWORD=...
+set POSTGRES_DB=taskbee
+alembic upgrade head
+flask --app app run --debug --port 5000
 ```
 
+---
+
+## Лабораторная работа 2. PostgreSQL и ORM
+
+**Цель:** схема БД, SQLAlchemy (ORM), миграции Alembic, REST CRUD.
+
+- **ORM:** Flask-SQLAlchemy (`models.py`).
+- **Миграции:** Alembic (`backend/alembic/`, первая ревизия `20260201_0001_initial_taskbee.py`).
+- **Команды:** из каталога `backend`:
+  ```bash
+  alembic upgrade head
+  alembic downgrade -1
+  alembic history
+  ```
+
+### Сущности
+
+`users`, `service_categories`, `services`, `specialists`, `orders`, `reviews` — см. ER-диаграмму [docs/db_schema.png](docs/db_schema.png).
+
+### API и документация
+
+- OpenAPI 3.0: [docs/openapi.yaml](docs/openapi.yaml) (базовый URL `http://localhost:5000/api/v1`).
+- Просмотр в Scalar: `npx @scalar/cli document serve docs/openapi.yaml`
+
+### Примеры curl
+
+```bash
+curl http://localhost:5000/api/v1/categories
+curl -X POST http://localhost:5000/api/v1/categories -H "Content-Type: application/json" -d "{\"name\":\"Ремонт\",\"slug\":\"remont\"}"
+```
+
+---
+
+## Структура репозитория
+
+```
+TaskBee/
+├── backend/           # Flask, SQLAlchemy, Alembic, Dockerfile
+├── frontend/          # Nginx + статическая страница, Dockerfile
+├── db/init.sql        # Инициализация PostgreSQL
+├── docs/              # openapi.yaml, db_schema.png
+├── docker-compose.yml
+├── .env.example
+└── README.md
+```

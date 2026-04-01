@@ -3,11 +3,11 @@ info:
   title: TaskBee API
   description: |
     REST API платформы быстрого поиска и заказа профессиональных услуг (ЛР2).
-    Базовый URL при локальном запуске: `http://localhost:8000/api/v1`
+    Базовый URL при локальном запуске: `http://localhost:5000/api/v1` (Flask / Gunicorn)
   version: 1.0.0
 
 servers:
-  - url: http://localhost:8000/api/v1
+  - url: http://localhost:5000/api/v1
     description: Локальный сервер
 
 paths:
