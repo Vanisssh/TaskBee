@@ -1,26 +1,32 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TaskBee</title>
-  <style>
-    body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
-    h1 { color: #1a1a1a; }
-    code { background: #f4f4f5; padding: 0.15rem 0.35rem; border-radius: 4px; }
-  </style>
-</head>
-<body>
-  <h1>TaskBee</h1>
-  <p>Информационная система быстрого поиска и заказа профессиональных услуг.</p>
-  <p>REST API: <code id="api"></code></p>
-  <p>Swagger UI (ЛР3): <a id="docs" href="#">/api/docs/</a></p>
-  <script>
-    const host = location.hostname || 'localhost';
-    const base = 'http://' + host + ':5000';
-    document.getElementById('api').textContent = base + '/api/v1/';
-    const a = document.getElementById('docs');
-    a.href = base + '/api/docs/';
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TaskBee - Панель управления</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background: #f5f5f5;
+        color: #333;
+      }
+      #root {
+        width: 100%;
+        min-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

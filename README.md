@@ -128,10 +128,95 @@ curl -X POST http://localhost:5000/api/v1/categories -H "Content-Type: applicati
 ```
 TaskBee/
 ├── backend/           # Flask, api/, schemas.py, Alembic, Dockerfile
-├── frontend/          # Nginx + статическая страница, Dockerfile
+├── frontend/          # React 18 + TypeScript + Vite, Recharts, Docker multi-stage
 ├── db/init.sql        # Инициализация PostgreSQL
 ├── docs/              # openapi.yaml, db_schema.png
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
 ```
+
+---
+
+## Лабораторная работа 4. Фронтенд, визуализация данных и интеграция с API
+
+**Цель:** Создание интерактивного веб-интерфейса на **React**, интеграция с REST API из ЛР3, визуализация данных и оптимизация фронтенда для Docker.
+
+### Реализовано
+
+| Требование | Реализация |
+|------------|------------|
+| **SPA (Single Page Application)** | React 18 + TypeScript с клиентской маршрутизацией через компоненты |
+| **Сборщик** | **Vite** — современная альтернатива Create React App, мгновенная пересборка |
+| **Визуализация** | **Recharts** — интерактивные графики (BarChart, PieChart), таблицы данных |
+| **Интеграция API** | **React Query** — управление состоянием, кэширование, автоматическое обновление; **Axios** — HTTP-клиент с типизацией |
+| **Компоненты** | Dashboard (панель), StatCard (метрики), OrderStatusChart, ReviewRatingsChart, SpecialistsRatingChart, CategoriesOverview, RecentOrdersTable, LoadingSpinner, ErrorBoundary |
+| **Стилизация** | CSS Modules + gradient, responsive grid, мобильная оптимизация |
+| **Docker** | Многоступенчатая сборка: Node 18 (builder) + Nginx Alpine (runtime); финальный образ **~20 МБ** (vs 1 ГБ+ с полным Node.js) |
+| **Nginx** | Reverse proxy, Gzip-сжатие, кэширование статики, security headers, SPA routing |
+| **Окружение** | `.env` с `VITE_API_BASE_URL`, Vite proxy для dev-режима (`/api` → `http://backend:5000`) |
+
+### Структура frontend
+
+```
+frontend/
+├── src/
+│   ├── components/          # React компоненты
+│   │   ├── Dashboard.tsx     # Главная панель с гридом и графиками
+│   │   ├── Header.tsx        # Заголовок и навигация
+│   │   ├── StatCard.tsx      # Карточка метрики
+│   │   ├── OrderStatusChart.tsx
+│   │   ├── ReviewRatingsChart.tsx
+│   │   ├── SpecialistsRatingChart.tsx
+│   │   ├── CategoriesOverview.tsx
+│   │   ├── RecentOrdersTable.tsx
+│   │   ├── LoadingSpinner.tsx
+│   │   └── ErrorBoundary.tsx
+│   ├── hooks/               # Custom React hooks
+│   │   ├── useApi.ts        # Генерический хук для API (React Query)
+│   │   └── useStats.ts      # Хук для статистики
+│   ├── services/            # API слой
+│   │   └── api.ts           # Axios клиент + конфигурация
+│   ├── types/               # TypeScript interfaces
+│   │   └── index.ts
+│   ├── App.tsx
+│   ├── main.tsx             # Точка входа React
+│   └── index.css
+├── index.html               # HTML шаблон
+├── vite.config.ts           # Конфиг Vite + прокси
+├── tsconfig.json            # TypeScript конфиг
+├── package.json             # Зависимости
+├── Dockerfile               # Multi-stage build
+├── nginx.conf               # Конфиг веб-сервера
+```
+
+### API эндпоинты (подключены)
+
+```
+GET  /api/v1/stats/summary           → Метрики для Dashboard
+GET  /api/v1/orders                  → Недавние заказы (таблица)
+GET  /api/v1/categories              → Категории услуг
+GET  /api/v1/services                → Услуги (для перекрёстных ссылок)
+```
+
+### Зависимости фронтенда
+
+```json
+{
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.10.0",
+    "axios": "^1.6.0",
+    "@tanstack/react-query": "^5.25.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2",
+    "vite": "^5.0.2",
+    "@vitejs/plugin-react": "^4.1.0",
+    "eslint": "^8.51.0"
+  }
+}
+```
+
+

@@ -32,3 +32,17 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Node modules and dependencies
+node_modules/
+npm-debug.log
+npm-error.log
+yarn-error.log
+pnpm-debug.log
+
+# Build output
+dist/
+build/
+.cache/
+.vite/
+.turbo/
