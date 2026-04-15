@@ -17,22 +17,27 @@ class ApiClient {
 
   async get<T>(url: string, config = {}): Promise<T> {
     const response = await this.client.get<T>(url, config)
-    return response.data
+    const payload: any = response.data
+    // Backend wraps responses as { data: ... } — unwrap if present
+    return payload && typeof payload === 'object' && 'data' in payload ? (payload.data as T) : (payload as T)
   }
 
   async post<T>(url: string, data?: unknown, config = {}): Promise<T> {
     const response = await this.client.post<T>(url, data, config)
-    return response.data
+    const payload: any = response.data
+    return payload && typeof payload === 'object' && 'data' in payload ? (payload.data as T) : (payload as T)
   }
 
   async put<T>(url: string, data?: unknown, config = {}): Promise<T> {
     const response = await this.client.put<T>(url, data, config)
-    return response.data
+    const payload: any = response.data
+    return payload && typeof payload === 'object' && 'data' in payload ? (payload.data as T) : (payload as T)
   }
 
   async delete<T>(url: string, config = {}): Promise<T> {
     const response = await this.client.delete<T>(url, config)
-    return response.data
+    const payload: any = response.data
+    return payload && typeof payload === 'object' && 'data' in payload ? (payload.data as T) : (payload as T)
   }
 }
 
