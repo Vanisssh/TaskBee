@@ -98,7 +98,7 @@ def create_app() -> Flask:
             db.session.execute(text("SELECT 1"))
             return "DB connected!", 200
         except Exception as e:
-            return "Error: {e!s}", 500
+            return "Error: {!s}", 500
 
     @app.route("/redis-check")
     def redis_check():
@@ -117,27 +117,19 @@ def create_app() -> Flask:
 app = create_app()
 
 
-# Attempt to register this backend with Consul 
-def _register_with_consul():
+# Attempt to register this backend with the local discovery endpoint (Consul or Redis fallback)
+def _register_with_discovery():
     try:
         import time
         time.sleep(2)
-        consul_url = "http://consul:8500/v1/agent/service/register"
         service_id = "backend-{os.getenv('HOSTNAME', 'backend')}"
-        payload = {
-            "ID": service_id,
-            "Name": "taskbee-backend",
-            "Address": "backend",
-            "Port": 5000,
-            "Tags": ["api", "v1"],
-            "Check": {"HTTP": "http://backend:5000/health", "Interval": "10s"},
-        }
-        r = requests.put(consul_url, json=payload, timeout=2)
-        if r.status_code in (200, 204):
-            logger.info("Registered service with Consul: %s", service_id)
+        payload = {"id": service_id, "address": "backend:5000", "tags": ["api", "v1"]}
+        r = requests.post("http://backend:5000/api/v1/discovery/register", json=payload, timeout=3)
+        if r.ok:
+            logger.info("Registered with discovery: %s (%s)", service_id, r.status_code)
         else:
-            logger.warning("Consul registration returned %s: %s", r.status_code, r.text)
+            logger.warning("Discovery register returned %s: %s", r.status_code, r.text)
     except Exception as e:
-        logger.info("Consul not available or registration failed: %s", e)
+        logger.info("Discovery registration failed: %s", e)
 
-threading.Thread(target=_register_with_consul, daemon=True).start()
+threading.Thread(target=_register_with_discovery, daemon=True).start()

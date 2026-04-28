@@ -6,7 +6,6 @@ function Header() {
       <div className="header-content">
         <div className="header-logo">
           <h1>🐝 TaskBee</h1>
-          <p>Лабораторная работа 4 - React Frontend</p>
         </div>
         <div className="header-nav">
           <a href="https://github.com" target="_blank" rel="noopener noreferrer">
