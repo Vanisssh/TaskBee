@@ -123,3 +123,35 @@ class ServicesList(Resource):
         except Exception as e:
             log.exception("Redis list failed: %s", e)
             return {"error": "discovery_unavailable", "detail": str(e)}, 503
+
+
+@ns.route("/renew")
+class Renew(Resource):
+    def post(self):
+        payload = request.json or {}
+        service_id = payload.get("id")
+        if not service_id:
+            return {"error": "id required"}, 400
+
+        # If consul is used, try to mark service check as passing (best-effort)
+        if consul_available():
+            try:
+                check_id = f"service:{service_id}"
+                r = requests.put(f"http://consul:8500/v1/agent/check/pass/{check_id}", timeout=2)
+                if r.status_code in (200, 204):
+                    return {"status": "renewed_consul"}, 200
+            except Exception as e:
+                log.info("Consul renew failed: %s", e)
+                # fallthrough to redis
+
+        # Redis fallback: refresh TTL
+        try:
+            rdb = get_redis()
+            key = f"discovery:service:{service_id}"
+            if not rdb.exists(key):
+                return {"error": "not_registered"}, 404
+            rdb.expire(key, 60)
+            return {"status": "renewed_redis"}, 200
+        except Exception as e:
+            log.exception("Redis renew failed: %s", e)
+            return {"error": "renew_failed", "detail": str(e)}, 500

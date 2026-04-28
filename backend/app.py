@@ -98,7 +98,7 @@ def create_app() -> Flask:
             db.session.execute(text("SELECT 1"))
             return "DB connected!", 200
         except Exception as e:
-            return f"Error: {e!s}", 500
+            return "Error: {e!s}", 500
 
     @app.route("/redis-check")
     def redis_check():
@@ -123,14 +123,14 @@ def _register_with_consul():
         import time
         time.sleep(2)
         consul_url = "http://consul:8500/v1/agent/service/register"
-        service_id = f"backend-{os.getenv('HOSTNAME', 'backend')}"
+        service_id = "backend-{os.getenv('HOSTNAME', 'backend')}"
         payload = {
             "ID": service_id,
             "Name": "taskbee-backend",
             "Address": "backend",
             "Port": 5000,
             "Tags": ["api", "v1"],
-            "Check": {"HTTP": f"http://backend:5000/health", "Interval": "10s"},
+            "Check": {"HTTP": "http://backend:5000/health", "Interval": "10s"},
         }
         r = requests.put(consul_url, json=payload, timeout=2)
         if r.status_code in (200, 204):
