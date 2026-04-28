@@ -98,7 +98,7 @@ def create_app() -> Flask:
             db.session.execute(text("SELECT 1"))
             return "DB connected!", 200
         except Exception as e:
-            return "Error: {!s}", 500
+            return "Error: {!s}", e, 500
 
     @app.route("/redis-check")
     def redis_check():
