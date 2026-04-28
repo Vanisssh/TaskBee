@@ -5,6 +5,7 @@ import ReviewRatingsChart from './ReviewRatingsChart'
 import SpecialistsRatingChart from './SpecialistsRatingChart'
 import RecentOrdersTable from './RecentOrdersTable'
 import CategoriesOverview from './CategoriesOverview'
+import ServiceSelector from './ServiceSelector'
 import LoadingSpinner from './LoadingSpinner'
 import { useStats } from '../hooks/useStats'
 
@@ -106,6 +107,10 @@ function Dashboard() {
         <div className="chart-container">
           <h2>Услуги по категориям</h2>
           <CategoriesOverview />
+        </div>
+        <div className="chart-container">
+          <h2>Сервис Discovery</h2>
+          <ServiceSelector />
         </div>
       </div>
 

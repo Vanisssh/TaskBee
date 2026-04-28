@@ -7,6 +7,8 @@ import os
 import time
 
 import redis
+import requests
+import threading
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -113,3 +115,29 @@ def create_app() -> Flask:
 
 
 app = create_app()
+
+
+# Attempt to register this backend with Consul 
+def _register_with_consul():
+    try:
+        import time
+        time.sleep(2)
+        consul_url = "http://consul:8500/v1/agent/service/register"
+        service_id = f"backend-{os.getenv('HOSTNAME', 'backend')}"
+        payload = {
+            "ID": service_id,
+            "Name": "taskbee-backend",
+            "Address": "backend",
+            "Port": 5000,
+            "Tags": ["api", "v1"],
+            "Check": {"HTTP": f"http://backend:5000/health", "Interval": "10s"},
+        }
+        r = requests.put(consul_url, json=payload, timeout=2)
+        if r.status_code in (200, 204):
+            logger.info("Registered service with Consul: %s", service_id)
+        else:
+            logger.warning("Consul registration returned %s: %s", r.status_code, r.text)
+    except Exception as e:
+        logger.info("Consul not available or registration failed: %s", e)
+
+threading.Thread(target=_register_with_consul, daemon=True).start()

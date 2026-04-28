@@ -25,8 +25,19 @@ services:
   redis:
     image: redis:7-alpine
     container_name: taskbee-redis
+    command: redis-server --save 60 1 --loglevel warning
     volumes:
       - redisdata:/data
+    networks:
+      - app-network
+
+  consul:
+    image: bitnami/consul:1.17
+    container_name: taskbee-consul
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    command: consul agent -dev -client=0.0.0.0 -ui
     networks:
       - app-network
 
