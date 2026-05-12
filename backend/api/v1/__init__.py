@@ -3,6 +3,7 @@
 
 def register_namespaces(api) -> None:
     from api.v1.categories import ns as categories_ns
+    from api.v1.matching import ns as matching_ns
     from api.v1.orders import ns as orders_ns
     from api.v1.reviews import ns as reviews_ns
     from api.v1.services import ns as services_ns
@@ -19,3 +20,4 @@ def register_namespaces(api) -> None:
     api.add_namespace(users_ns, path="/v1/users")
     api.add_namespace(stats_ns, path="/v1/stats")
     api.add_namespace(discovery_ns, path="/v1/discovery")
+    api.add_namespace(matching_ns, path="/v1/matching")

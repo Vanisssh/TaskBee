@@ -63,3 +63,31 @@ export interface StatsData {
   avg_review_rating: number
   avg_specialist_rating: number
 }
+
+/** Ответ микросервиса подбора (через POST /matching/recommendations). */
+export interface MatchingRankEntry {
+  specialist_id: number
+  score: number
+  details?: Record<string, number>
+}
+
+export interface MatchingRecommendationResult {
+  best_match: MatchingRankEntry | null
+  ranking: MatchingRankEntry[]
+  meta?: {
+    source?: string
+    model?: string
+    candidate_count?: number
+    request_id?: string
+    reason?: string
+  }
+  error?: string
+  message?: string
+}
+
+export interface DiscoveryServiceEntry {
+  id: string
+  name?: string
+  address: string
+  tags?: string[]
+}

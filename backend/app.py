@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+import uuid
 
 import redis
 import requests
@@ -59,11 +60,20 @@ def create_app() -> Flask:
     @app.before_request
     def _request_timer_start() -> None:
         g._t0 = time.perf_counter()
+        g.request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
 
     @app.after_request
     def _log_request(response):
         elapsed_ms = (time.perf_counter() - getattr(g, "_t0", time.perf_counter())) * 1000
-        logger.info("%s %s → %s (%.2f ms)", request.method, request.path, response.status_code, elapsed_ms)
+        response.headers["X-Request-ID"] = getattr(g, "request_id", "")
+        logger.info(
+            "[%s] %s %s → %s (%.2f ms)",
+            getattr(g, "request_id", "-"),
+            request.method,
+            request.path,
+            response.status_code,
+            elapsed_ms,
+        )
         return response
 
     @app.errorhandler(400)
@@ -122,7 +132,7 @@ def _register_with_discovery():
     try:
         import time
         time.sleep(2)
-        service_id = "backend-{os.getenv('HOSTNAME', 'backend')}"
+        service_id = f"backend-{os.getenv('HOSTNAME', 'backend')}"
         payload = {"id": service_id, "address": "backend:5000", "tags": ["api", "v1"]}
         r = requests.post("http://backend:5000/api/v1/discovery/register", json=payload, timeout=3)
         if r.ok:

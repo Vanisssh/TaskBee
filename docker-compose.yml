@@ -31,6 +31,15 @@ services:
     networks:
       - app-network
 
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: taskbee-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - app-network
+
 
   backend:
     build:
@@ -47,12 +56,55 @@ services:
       POSTGRES_PORT: "5432"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/%2F}
+      MATCHER_API_KEY: ${MATCHER_API_KEY:-taskbee-matcher-key}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       RATELIMIT_STORAGE_URL: ${RATELIMIT_STORAGE_URL:-redis://redis:6379/1}
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    networks:
+      - app-network
+
+  matcher-service:
+    build:
+      context: ./matcher-service
+      dockerfile: Dockerfile
+    container_name: taskbee-matcher
+    environment:
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/%2F}
+      DISCOVERY_URL: http://backend:5000/api/v1/discovery
+      SERVICE_PORT: "8001"
+      SERVICE_ADDRESS: matcher-service:8001
+    depends_on:
+      backend:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    networks:
+      - app-network
+
+  generator:
+    build:
+      context: ./generator
+      dockerfile: Dockerfile
+    container_name: taskbee-generator
+    environment:
+      BACKEND_URL: http://backend:5000
+      DISCOVERY_URL: http://backend:5000/api/v1/discovery
+      MATCHING_URL: http://backend:5000/api/v1/matching/recommendations
+      GENERATOR_API_KEY: ${MATCHER_API_KEY:-taskbee-matcher-key}
+      GENERATOR_INTERVAL_SECONDS: ${GENERATOR_INTERVAL_SECONDS:-8}
+      SERVICE_PORT: "8000"
+      SERVICE_ADDRESS: generator:8000
+    depends_on:
+      backend:
+        condition: service_started
+      matcher-service:
         condition: service_started
     networks:
       - app-network
