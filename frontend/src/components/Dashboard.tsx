@@ -6,6 +6,10 @@ import SpecialistsRatingChart from './SpecialistsRatingChart'
 import RecentOrdersTable from './RecentOrdersTable'
 import CategoriesOverview from './CategoriesOverview'
 import ServiceSelector from './ServiceSelector'
+import DiscoveryServicesPanel from './DiscoveryServicesPanel'
+import OrdersAssignmentChart from './OrdersAssignmentChart'
+import MatchingRankingChart from './MatchingRankingChart'
+import GeneratorStatusPanel from './GeneratorStatusPanel'
 import LoadingSpinner from './LoadingSpinner'
 import { useStats } from '../hooks/useStats'
 
@@ -111,6 +115,30 @@ function Dashboard() {
         <div className="chart-container">
           <h2>Сервис Discovery</h2>
           <ServiceSelector />
+        </div>
+      </div>
+
+      <div className="dashboard-header" style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: '1.35em' }}>Микросервисы и подбор исполнителей</h1>
+        <p>Discovery, назначения по заказам и демо-ранжирование через RabbitMQ</p>
+      </div>
+
+      <div className="charts-grid">
+        <div className="chart-container" style={{ gridColumn: '1 / -1' }}>
+          <h2>Генератор данных</h2>
+          <GeneratorStatusPanel />
+        </div>
+        <div className="chart-container">
+          <h2>Зарегистрированные сервисы</h2>
+          <DiscoveryServicesPanel />
+        </div>
+        <div className="chart-container">
+          <h2>Назначение исполнителей по заказам</h2>
+          <OrdersAssignmentChart />
+        </div>
+        <div className="chart-container" style={{ gridColumn: '1 / -1' }}>
+          <h2>Релевантность исполнителей (matching)</h2>
+          <MatchingRankingChart />
         </div>
       </div>
 

@@ -54,6 +54,22 @@
   font-size: 1.1em;
 }
 
+.specialist-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e9d8fd;
+  color: #553c9a;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.specialist-pill--empty {
+  background: #edf2f7;
+  color: #a0aec0;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .orders-table {
     font-size: 0.85em;

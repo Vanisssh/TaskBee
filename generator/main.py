@@ -3,10 +3,13 @@ from __future__ import annotations
 import logging
 import os
 import random
+import threading
 import time
 import uuid
+from typing import Any
 
 import requests
+from flask import Flask, jsonify
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -21,12 +24,49 @@ SERVICE_PORT = int(os.environ.get("SERVICE_PORT", "8000"))
 SERVICE_ID = os.environ.get("SERVICE_ID", f"generator-{os.environ.get('HOSTNAME', 'local')}")
 SERVICE_ADDRESS = os.environ.get("SERVICE_ADDRESS", f"generator:{SERVICE_PORT}")
 
+_state_lock = threading.Lock()
+STATE: dict[str, Any] = {
+    "service_id": SERVICE_ID,
+    "interval_seconds": GENERATOR_INTERVAL,
+    "orders_created": 0,
+    "match_calls": 0,
+    "assignments": 0,
+    "iterations_ok": 0,
+    "iterations_failed": 0,
+    "last_order_id": None,
+    "last_specialist_id": None,
+    "last_match_source": None,
+    "last_error": None,
+    "started_at_iso": None,
+}
+
+app = Flask(__name__)
+
 
 def _headers() -> dict[str, str]:
     headers = {"Content-Type": "application/json", "X-Request-ID": str(uuid.uuid4())}
     if GENERATOR_API_KEY:
         headers["X-API-Key"] = GENERATOR_API_KEY
     return headers
+
+
+@app.get("/health")
+def health():
+    return jsonify({"status": "ok", "service": "taskbee-generator"}), 200
+
+
+@app.get("/stats")
+def stats():
+    with _state_lock:
+        snapshot = dict(STATE)
+    return jsonify(snapshot), 200
+
+
+def _run_http():
+    with _state_lock:
+        STATE["started_at_iso"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    log.info("Generator HTTP on 0.0.0.0:%s (/health, /stats)", SERVICE_PORT)
+    app.run(host="0.0.0.0", port=SERVICE_PORT, use_reloader=False, threaded=True)
 
 
 def register_service() -> None:
@@ -199,9 +239,27 @@ def run_loop() -> None:
             last_renew = now
         try:
             order = create_order()
+            with _state_lock:
+                STATE["orders_created"] += 1
+                STATE["last_order_id"] = order.get("id")
+                STATE["last_error"] = None
+
             result = request_matching(order)
+            with _state_lock:
+                STATE["match_calls"] += 1
+                STATE["last_match_source"] = (result.get("meta") or {}).get("source")
+
             assign_best_match(order["id"], result.get("best_match"))
             best = result.get("best_match") or {}
+            spec_id = best.get("specialist_id")
+            if spec_id:
+                with _state_lock:
+                    STATE["assignments"] += 1
+                    STATE["last_specialist_id"] = spec_id
+
+            with _state_lock:
+                STATE["iterations_ok"] += 1
+
             log.info(
                 "Order #%s processed, best specialist=%s score=%s source=%s",
                 order.get("id"),
@@ -210,9 +268,14 @@ def run_loop() -> None:
                 (result.get("meta") or {}).get("source"),
             )
         except Exception as exc:
+            with _state_lock:
+                STATE["iterations_failed"] += 1
+                STATE["last_error"] = str(exc)[:500]
             log.error("Generator iteration failed: %s", exc)
         time.sleep(GENERATOR_INTERVAL)
 
 
 if __name__ == "__main__":
+    threading.Thread(target=_run_http, daemon=True).start()
+    time.sleep(0.8)
     run_loop()

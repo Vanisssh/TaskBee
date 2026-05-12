@@ -6,10 +6,11 @@ interface Order {
   id: number
   client_id: number
   service_id: number
-  specialist_id: number | null
+  specialist_id?: number | null
+  specialist?: { id: number; rating_avg?: number } | null
   status: string
-  address: string
-  description: string
+  address?: string | null
+  description?: string | null
   created_at: string
 }
 
@@ -19,8 +20,10 @@ function RecentOrdersTable() {
 
   useEffect(() => {
     if (orders) {
-      // Show only last 10 orders sorted by creation date
-      const recent = orders.slice(0, 10)
+      const sorted = [...orders].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+      const recent = sorted.slice(0, 10)
       setDisplayOrders(recent)
     }
   }, [orders])
@@ -56,6 +59,7 @@ function RecentOrdersTable() {
             <th>ID</th>
             <th>Адрес</th>
             <th>Описание</th>
+            <th>Исполнитель</th>
             <th>Статус</th>
             <th>Дата создания</th>
           </tr>
@@ -64,8 +68,17 @@ function RecentOrdersTable() {
           {displayOrders.map(order => (
             <tr key={order.id}>
               <td>#{order.id}</td>
-              <td>{order.address}</td>
-              <td className="description-cell">{order.description.substring(0, 50)}...</td>
+              <td>{order.address ?? '—'}</td>
+              <td className="description-cell">
+                {order.description ? `${order.description.slice(0, 50)}${order.description.length > 50 ? '…' : ''}` : '—'}
+              </td>
+              <td>
+                {(order.specialist?.id ?? order.specialist_id) != null ? (
+                  <span className="specialist-pill">#{order.specialist?.id ?? order.specialist_id}</span>
+                ) : (
+                  <span className="specialist-pill specialist-pill--empty">—</span>
+                )}
+              </td>
               <td>
                 <span className="status-badge" style={{ backgroundColor: getStatusBadge(order.status) }}>
                   {order.status}

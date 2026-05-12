@@ -13,7 +13,10 @@ RUN npm ci --include=dev
 # Copy source code
 COPY . .
 
-# Build the application
+ARG VITE_MATCHER_API_KEY=
+ENV VITE_MATCHER_API_KEY=$VITE_MATCHER_API_KEY
+
+# Build the application (VITE_* вшиваются на этапе build)
 RUN npm run build
 
 # Stage 2: Production

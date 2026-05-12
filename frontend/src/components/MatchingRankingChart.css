@@ -1,0 +1,53 @@
+.matching-chart__state {
+  color: #666;
+  padding: 12px 0;
+  font-size: 0.95rem;
+}
+
+.matching-chart__state--error {
+  color: #c53030;
+}
+
+.matching-chart__hint {
+  margin-top: 10px;
+  font-size: 0.85em;
+  color: #666;
+  line-height: 1.45;
+}
+
+.matching-chart__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.matching-chart__badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  background: #edf2f7;
+  color: #2d3748;
+}
+
+.matching-chart__badge strong {
+  font-weight: 600;
+}
+
+.matching-chart__badge--muted {
+  background: #f7fafc;
+  color: #718096;
+}
+
+.matching-chart__badge--best {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.matching-chart__caption {
+  margin: 0 0 12px 0;
+  font-size: 0.88em;
+  color: #718096;
+  line-height: 1.45;
+}

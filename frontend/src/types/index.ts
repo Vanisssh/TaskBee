@@ -12,6 +12,7 @@ export interface Specialist {
   user_id: number
   bio: string
   rating_avg: number
+  user?: { id: number; name: string; email: string }
 }
 
 export interface Service {
@@ -31,11 +32,12 @@ export interface Order {
   id: number
   client_id: number
   service_id: number
-  specialist_id?: number
+  specialist_id?: number | null
   status: 'new' | 'assigned' | 'in_progress' | 'completed' | 'cancelled'
-  address: string
-  description: string
+  address?: string | null
+  description?: string | null
   created_at: string
+  specialist?: { id: number; user_id?: number; rating_avg?: number } | null
 }
 
 export interface Review {
@@ -90,4 +92,27 @@ export interface DiscoveryServiceEntry {
   name?: string
   address: string
   tags?: string[]
+}
+
+/** Счётчики с GET http://generator:8000/stats (через backend GET /generator/status). */
+export interface GeneratorRuntimeStats {
+  service_id: string
+  interval_seconds: number
+  orders_created: number
+  match_calls: number
+  assignments: number
+  iterations_ok: number
+  iterations_failed: number
+  last_order_id: number | null
+  last_specialist_id: number | null
+  last_match_source: string | null
+  last_error: string | null
+  started_at_iso: string | null
+}
+
+export interface GeneratorStatusResponse {
+  reachable: boolean
+  generator?: GeneratorRuntimeStats
+  http_status?: number
+  detail?: string
 }
