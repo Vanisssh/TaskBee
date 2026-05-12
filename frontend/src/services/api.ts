@@ -1,6 +1,22 @@
 import axios, { AxiosInstance } from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
+const AUTH_TOKEN_KEY = 'taskbee_auth_token'
+
+let authToken: string | null = localStorage.getItem(AUTH_TOKEN_KEY)
+
+export function setAuthToken(token: string | null) {
+  authToken = token
+  if (token) {
+    localStorage.setItem(AUTH_TOKEN_KEY, token)
+  } else {
+    localStorage.removeItem(AUTH_TOKEN_KEY)
+  }
+}
+
+export function getAuthToken() {
+  return authToken
+}
 
 class ApiClient {
   private client: AxiosInstance
@@ -11,6 +27,14 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+    })
+
+    this.client.interceptors.request.use((config) => {
+      if (authToken) {
+        config.headers = config.headers || {}
+        config.headers.Authorization = `Bearer ${authToken}`
+      }
+      return config
     })
   }
 

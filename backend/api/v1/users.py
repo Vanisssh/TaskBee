@@ -11,7 +11,8 @@ user_model = ns.model(
     {
         "name": fields.String(required=True),
         "email": fields.String(required=True),
-        "password_hash": fields.String(description="заглушка, без хеширования в учебном проекте"),
+        "password_hash": fields.String(description="хеш пароля (для служебных сценариев)"),
+        "role": fields.String(enum=["customer", "executor"]),
     },
 )
 
@@ -21,7 +22,7 @@ class UserList(Resource):
     @ns.doc("list_users")
     def get(self):
         rows = User.query.order_by(User.id).all()
-        return {"data": [{"id": u.id, "name": u.name, "email": u.email} for u in rows]}
+        return {"data": [{"id": u.id, "name": u.name, "email": u.email, "role": u.role} for u in rows]}
 
     @ns.expect(user_model)
     @ns.response(201, "Created")
@@ -35,10 +36,11 @@ class UserList(Resource):
             name=payload["name"],
             email=payload["email"],
             password_hash=payload.get("password_hash"),
+            role=payload.get("role") or User.ROLE_CUSTOMER,
         )
         db.session.add(u)
         db.session.commit()
-        return {"data": {"id": u.id, "name": u.name, "email": u.email}}, 201
+        return {"data": {"id": u.id, "name": u.name, "email": u.email, "role": u.role}}, 201
 
 
 @ns.route("/<int:uid>")
@@ -48,4 +50,4 @@ class UserItem(Resource):
         u = User.query.get(uid)
         if not u:
             return {"error": "not_found", "message": "Пользователь не найден"}, 404
-        return {"data": {"id": u.id, "name": u.name, "email": u.email}}
+        return {"data": {"id": u.id, "name": u.name, "email": u.email, "role": u.role}}

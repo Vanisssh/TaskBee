@@ -11,10 +11,14 @@ db = SQLAlchemy()
 class User(db.Model):
     __tablename__ = "users"
 
+    ROLE_CUSTOMER = "customer"
+    ROLE_EXECUTOR = "executor"
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=True)
+    role = db.Column(db.String(32), nullable=False, default=ROLE_CUSTOMER, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     specialist = db.relationship("Specialist", back_populates="user", uselist=False)

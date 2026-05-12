@@ -2,6 +2,7 @@
 
 
 def register_namespaces(api) -> None:
+    from api.v1.auth import ns as auth_ns
     from api.v1.categories import ns as categories_ns
     from api.v1.matching import ns as matching_ns
     from api.v1.orders import ns as orders_ns
@@ -13,6 +14,7 @@ def register_namespaces(api) -> None:
     from api.v1.discovery import ns as discovery_ns
     from api.v1.generator import ns as generator_ns
 
+    api.add_namespace(auth_ns, path="/v1/auth")
     api.add_namespace(categories_ns, path="/v1/categories")
     api.add_namespace(services_ns, path="/v1/services")
     api.add_namespace(orders_ns, path="/v1/orders")

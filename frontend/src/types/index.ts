@@ -4,7 +4,8 @@ export interface User {
   id: number
   name: string
   email: string
-  created_at: string
+  role: 'customer' | 'executor'
+  created_at?: string | null
 }
 
 export interface Specialist {

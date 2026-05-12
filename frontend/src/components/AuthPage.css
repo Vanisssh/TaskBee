@@ -1,0 +1,77 @@
+.auth-page {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+}
+
+.auth-card h1 {
+  margin: 0 0 8px 0;
+}
+
+.auth-subtitle {
+  color: #666;
+  margin-bottom: 18px;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tab {
+  background: #edf2f7;
+  color: #333;
+}
+
+.tab.active {
+  background: #667eea;
+  color: #fff;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.92em;
+  color: #333;
+}
+
+.auth-form input,
+.auth-form select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d9dce3;
+  outline: none;
+}
+
+.auth-form input:focus,
+.auth-form select:focus {
+  border-color: #667eea;
+}
+
+.auth-error {
+  background: #fff5f5;
+  color: #c53030;
+  border-left: 4px solid #f56565;
+  padding: 9px 11px;
+  border-radius: 8px;
+}

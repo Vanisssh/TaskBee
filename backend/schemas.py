@@ -60,6 +60,19 @@ class UserCreateSchema(Schema):
     name = fields.Str(required=True, validate=validate.Length(min=1, max=255))
     email = fields.Email(required=True)
     password_hash = fields.Str(load_default=None, allow_none=True)
+    role = fields.Str(validate=validate.OneOf(["customer", "executor"]), load_default="customer")
+
+
+class AuthRegisterSchema(Schema):
+    name = fields.Str(required=True, validate=validate.Length(min=1, max=255))
+    email = fields.Email(required=True)
+    password = fields.Str(required=True, validate=validate.Length(min=6, max=128))
+    role = fields.Str(required=True, validate=validate.OneOf(["customer", "executor"]))
+
+
+class AuthLoginSchema(Schema):
+    email = fields.Email(required=True)
+    password = fields.Str(required=True, validate=validate.Length(min=1, max=128))
 
 
 class SpecialistCreateSchema(Schema):
