@@ -33,5 +33,10 @@ jobs:
         working-directory: backend
         run: python -c "from app import app; assert app is not None"
 
-      - name: Compile Python sources
-        run: python -m compileall -q backend
+      - name: Run pytest with coverage
+        env:
+          TEST_DATABASE_URL: sqlite+pysqlite:///:memory:
+          ENABLE_SELF_DISCOVERY: "0"
+          RATELIMIT_STORAGE_URL: memory://
+        working-directory: backend
+        run: pytest --cov=. --cov-report=term-missing --cov-report=xml

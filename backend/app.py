@@ -19,6 +19,7 @@ from werkzeug.exceptions import HTTPException
 
 from api import create_api_blueprint
 from config import database_uri
+from metrics import export_metrics, observe_http_request
 from models import db
 
 logger = logging.getLogger("taskbee")
@@ -48,7 +49,7 @@ def create_app() -> Flask:
     @limiter.request_filter
     def _exempt_light_routes() -> bool:
         p = request.path or ""
-        if p in ("/health", "/db-check", "/redis-check"):
+        if p in ("/health", "/db-check", "/redis-check", "/metrics"):
             return True
         if p.startswith("/api/docs") or p.startswith("/swaggerui"):
             return True
@@ -65,6 +66,7 @@ def create_app() -> Flask:
     @app.after_request
     def _log_request(response):
         elapsed_ms = (time.perf_counter() - getattr(g, "_t0", time.perf_counter())) * 1000
+        observe_http_request(request.method, request.path, response.status_code, elapsed_ms / 1000.0)
         response.headers["X-Request-ID"] = getattr(g, "request_id", "")
         logger.info(
             "[%s] %s %s → %s (%.2f ms)",
@@ -121,6 +123,11 @@ def create_app() -> Flask:
         except Exception as e:
             return {"redis": "error", "detail": str(e)}, 503
 
+    @app.route("/metrics")
+    def metrics():
+        payload, content_type = export_metrics()
+        return payload, 200, {"Content-Type": content_type}
+
     return app
 
 
@@ -142,4 +149,5 @@ def _register_with_discovery():
     except Exception as e:
         logger.info("Discovery registration failed: %s", e)
 
-threading.Thread(target=_register_with_discovery, daemon=True).start()
+if os.environ.get("ENABLE_SELF_DISCOVERY", "1") == "1":
+    threading.Thread(target=_register_with_discovery, daemon=True).start()

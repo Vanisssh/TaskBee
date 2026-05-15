@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+import logging
 
 from flask import request
 from flask_restx import Namespace, Resource, fields
@@ -12,6 +13,7 @@ from models import Specialist, User, db
 from schemas import AuthLoginSchema, AuthRegisterSchema, validate_load
 
 ns = Namespace("auth", description="Регистрация и авторизация по email/паролю")
+audit_log = logging.getLogger("taskbee.audit.auth")
 
 register_model = ns.model(
     "AuthRegister",
@@ -82,6 +84,7 @@ class AuthRegister(Resource):
             return {"error": "validation", "details": errors}, 422
 
         if User.query.filter_by(email=payload["email"]).first():
+            audit_log.warning("register_failed email_exists email=%s", payload["email"])
             return {"error": "validation", "details": {"email": ["email уже занят"]}}, 422
 
         user = User(
@@ -97,6 +100,7 @@ class AuthRegister(Resource):
             db.session.add(Specialist(user_id=user.id, bio="Новый исполнитель", rating_avg=0))
 
         db.session.commit()
+        audit_log.info("register_success uid=%s role=%s email=%s", user.id, user.role, user.email)
 
         token = _issue_token(user)
         return {"data": {"token": token, "user": _user_dict(user)}}, 201
@@ -113,12 +117,15 @@ class AuthLogin(Resource):
         email = payload["email"].strip().lower()
         user = User.query.filter_by(email=email).first()
         if not user or not user.password_hash:
+            audit_log.warning("login_failed unknown_user email=%s", email)
             return {"error": "unauthorized", "message": "Неверный email или пароль"}, 401
 
         if not check_password_hash(user.password_hash, payload["password"]):
+            audit_log.warning("login_failed bad_password uid=%s email=%s", user.id, email)
             return {"error": "unauthorized", "message": "Неверный email или пароль"}, 401
 
         token = _issue_token(user)
+        audit_log.info("login_success uid=%s role=%s email=%s", user.id, user.role, user.email)
         return {"data": {"token": token, "user": _user_dict(user)}}, 200
 
 

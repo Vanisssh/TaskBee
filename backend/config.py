@@ -4,6 +4,10 @@ from urllib.parse import quote_plus
 
 def database_uri() -> str:
     """Строка подключения к PostgreSQL. Логин и пароль кодируются для URL (спецсимволы в пароле)."""
+    test_uri = os.environ.get("TEST_DATABASE_URL")
+    if test_uri:
+        return test_uri
+
     user = os.environ.get("POSTGRES_USER", "taskbee_user")
     password = os.environ.get("POSTGRES_PASSWORD", "taskbee_secret")
     host = os.environ.get("POSTGRES_HOST", "db")

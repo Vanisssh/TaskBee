@@ -10,6 +10,8 @@ from flask import request
 from flask_restx import Namespace, Resource, fields
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from metrics import MATCHING_CANDIDATE_COUNT, MATCHING_RPC_REQUESTS_TOTAL, MATCHING_TOP_SCORE
+
 log = logging.getLogger("taskbee.matching")
 
 ns = Namespace("matching", description="Интеллектуальный подбор исполнителей через RabbitMQ")
@@ -122,13 +124,20 @@ class MatchingRecommendations(Resource):
         if api_key and header_key != api_key:
             return {"error": "forbidden", "message": "Invalid API key"}, 403
 
+        MATCHING_CANDIDATE_COUNT.observe(len(candidates))
         try:
             result = _rpc_recommendation({"order": order, "candidates": candidates})
             result.setdefault("meta", {})
             result["meta"]["source"] = "matcher-service"
+            MATCHING_RPC_REQUESTS_TOTAL.labels("matcher-service").inc()
+            best_match = result.get("best_match") or {}
+            score = best_match.get("score")
+            if isinstance(score, (int, float)):
+                MATCHING_TOP_SCORE.observe(float(score))
             return {"data": result}, 200
         except Exception as exc:
             log.warning("Matcher RPC unavailable: %s", exc)
+            MATCHING_RPC_REQUESTS_TOTAL.labels("fallback").inc()
             return {"data": _fallback_recommendation(payload, str(exc))}, 200
 
 

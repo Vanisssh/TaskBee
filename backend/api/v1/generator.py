@@ -7,6 +7,8 @@ from typing import Any
 import requests
 from flask_restx import Namespace, Resource
 
+from metrics import GENERATOR_REACHABLE, GENERATOR_STATUS_CHECKS_TOTAL
+
 log = logging.getLogger("taskbee.generator_proxy")
 
 ns = Namespace("generator", description="Статус фонового генератора данных (микросервис generator)")
@@ -21,11 +23,17 @@ class GeneratorStatus(Resource):
         try:
             r = requests.get(GENERATOR_STATS_URL, timeout=2)
             if not r.ok:
+                GENERATOR_STATUS_CHECKS_TOTAL.labels("false").inc()
+                GENERATOR_REACHABLE.set(0)
                 return {
                     "data": {"reachable": False, "http_status": r.status_code, "detail": r.text[:200]},
                 }, 200
             body = r.json()
+            GENERATOR_STATUS_CHECKS_TOTAL.labels("true").inc()
+            GENERATOR_REACHABLE.set(1)
             return {"data": {"reachable": True, "generator": body}}, 200
         except Exception as e:
             log.info("Generator stats unreachable: %s", e)
+            GENERATOR_STATUS_CHECKS_TOTAL.labels("false").inc()
+            GENERATOR_REACHABLE.set(0)
             return {"data": {"reachable": False, "detail": str(e)}}, 200
