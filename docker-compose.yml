@@ -40,6 +40,30 @@ services:
     networks:
       - app-network
 
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.115.0
+    container_name: taskbee-victoriametrics
+    ports:
+      - "8428:8428"
+    command:
+      - "--retentionPeriod=1"
+    networks:
+      - app-network
+
+  vmagent:
+    image: victoriametrics/vmagent:v1.115.0
+    container_name: taskbee-vmagent
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "-promscrape.config=/etc/prometheus/prometheus.yml"
+      - "-remoteWrite.url=http://victoriametrics:8428/api/v1/write"
+    depends_on:
+      - backend
+      - victoriametrics
+    networks:
+      - app-network
+
 
   backend:
     build:

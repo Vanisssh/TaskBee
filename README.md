@@ -12,12 +12,14 @@
 
 ### Сервисы
 
-| Сервис | Описание |
-|--------|----------|
-| **db** | PostgreSQL 18. Данные в volume `pgdata`. Монтирование в `/var/lib/postgresql` (совместимо с образом 18+). При первом запуске выполняется `db/init.sql` (расширение `uuid-ossp`). |
-| **redis** | Redis 7 — кэш, очереди, сессии (адаптация под «быстрый поиск и заказ услуг»). Volume `redisdata`. Проверка: `GET /redis-check` на backend. |
-| **backend** | Flask + Gunicorn, порт **5000**. SQLAlchemy, Alembic, REST API `/api/v1`, Swagger UI `/api/docs/`. После старта — `alembic upgrade head`. |
-| **frontend** | Nginx со статической страницей, порт **3000** (внутри контейнера 80). |
+
+| Сервис       | Описание                                                                                                                                                                         |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **db**       | PostgreSQL 18. Данные в volume `pgdata`. Монтирование в `/var/lib/postgresql` (совместимо с образом 18+). При первом запуске выполняется `db/init.sql` (расширение `uuid-ossp`). |
+| **redis**    | Redis 7 — кэш, очереди, сессии (адаптация под «быстрый поиск и заказ услуг»). Volume `redisdata`. Проверка: `GET /redis-check` на backend.                                       |
+| **backend**  | Flask + Gunicorn, порт **5000**. SQLAlchemy, Alembic, REST API `/api/v1`, Swagger UI `/api/docs/`. После старта — `alembic upgrade head`.                                        |
+| **frontend** | Nginx со статической страницей, порт **3000** (внутри контейнера 80).                                                                                                            |
+
 
 ### Архитектура
 
@@ -30,27 +32,23 @@ frontend :3000 ──► backend :5000 ──┬──► db (PostgreSQL)
 ### Первый запуск
 
 1. Скопируйте `.env.example` в `.env` и задайте `DB_PASSWORD` и при необходимости остальные переменные.
-
 2. Запуск:
-   ```bash
+  ```bash
    docker compose up --build -d
-   ```
-
+  ```
 3. Проверка:
-   ```bash
+  ```bash
    docker compose ps
    docker compose logs db
    docker compose logs backend
-   ```
-
-4. В браузере: фронтенд <http://localhost:3000>, Swagger <http://localhost:5000/api/docs/>, проверки <http://localhost:5000/health> и <http://localhost:5000/db-check>.
-
+  ```
+4. В браузере: фронтенд [http://localhost:3000](http://localhost:3000), Swagger [http://localhost:5000/api/docs/](http://localhost:5000/api/docs/), проверки [http://localhost:5000/health](http://localhost:5000/health) и [http://localhost:5000/db-check](http://localhost:5000/db-check).
 5. Подключение к PostgreSQL из контейнера backend:
-   ```bash
+  ```bash
    docker compose exec backend bash
    apt-get update && apt-get install -y postgresql-client
    psql -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB"
-   ```
+  ```
 
 ### Локальная разработка backend (без Docker)
 
@@ -88,7 +86,7 @@ flask --app app run --debug --port 5000
 
 ### API и документация
 
-- **Интерактивно (ЛР3):** после запуска backend откройте <http://localhost:5000/api/docs/> (Swagger UI, Flask-RESTx).
+- **Интерактивно (ЛР3):** после запуска backend откройте [http://localhost:5000/api/docs/](http://localhost:5000/api/docs/) (Swagger UI, Flask-RESTx).
 - Статичный OpenAPI: [docs/openapi.yaml](docs/openapi.yaml) — Scalar: `npx @scalar/cli document serve docs/openapi.yaml`
 
 ### Примеры curl
@@ -106,16 +104,18 @@ curl -X POST http://localhost:5000/api/v1/categories -H "Content-Type: applicati
 
 ### Реализовано
 
-| Требование | Реализация |
-|------------|------------|
-| Модульная структура | `api/` — Blueprint с префиксом `/api`; `api/v1/*.py` — Flask-RESTx **Namespace** по ресурсам |
-| Валидация | **Marshmallow** — `schemas.py`, все тела POST/PUT проходят `validate_load` |
-| Документация | **Flask-RESTx** — Swagger UI по адресу **`http://localhost:5000/api/docs/`** |
-| CORS | **flask-cors**, список origin из переменной **`CORS_ALLOWED_ORIGINS`** (через запятую) |
-| Rate limiting | **flask-limiter** — **100 запросов/мин** на IP; хранилище **Redis** (`RATELIMIT_STORAGE_URL`, по умолчанию `redis://redis:6379/1`). Исключены `/health`, `/db-check`, `/redis-check`, `/api/docs` |
-| Ошибки | Ответы вида `{"error": "...", "message" или "details": ...}`, коды 4xx/5xx |
-| Логирование | `after_request`: метод, путь, статус, время ответа (мс) |
-| Адаптация под ИС | **`GET /api/v1/specialists/search`** — быстрый подбор исполнителей (`min_rating`, `category_id`, `limit`); **`GET /api/v1/stats/summary`** — агрегаты (заказы по статусам, средние рейтинги, счётчики). CRUD **users** и **specialists** для сценариев «клиент → заказ → исполнитель» |
+
+| Требование          | Реализация                                                                                                                                                                                                                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Модульная структура | `api/` — Blueprint с префиксом `/api`; `api/v1/*.py` — Flask-RESTx **Namespace** по ресурсам                                                                                                                                                                                          |
+| Валидация           | **Marshmallow** — `schemas.py`, все тела POST/PUT проходят `validate_load`                                                                                                                                                                                                            |
+| Документация        | **Flask-RESTx** — Swagger UI по адресу `**http://localhost:5000/api/docs/`**                                                                                                                                                                                                          |
+| CORS                | **flask-cors**, список origin из переменной `**CORS_ALLOWED_ORIGINS`** (через запятую)                                                                                                                                                                                                |
+| Rate limiting       | **flask-limiter** — **100 запросов/мин** на IP; хранилище **Redis** (`RATELIMIT_STORAGE_URL`, по умолчанию `redis://redis:6379/1`). Исключены `/health`, `/db-check`, `/redis-check`, `/api/docs`                                                                                     |
+| Ошибки              | Ответы вида `{"error": "...", "message" или "details": ...}`, коды 4xx/5xx                                                                                                                                                                                                            |
+| Логирование         | `after_request`: метод, путь, статус, время ответа (мс)                                                                                                                                                                                                                               |
+| Адаптация под ИС    | `**GET /api/v1/specialists/search`** — быстрый подбор исполнителей (`min_rating`, `category_id`, `limit`); `**GET /api/v1/stats/summary`** — агрегаты (заказы по статусам, средние рейтинги, счётчики). CRUD **users** и **specialists** для сценариев «клиент → заказ → исполнитель» |
+
 
 ### Переменные окружения (ЛР3)
 
@@ -144,17 +144,19 @@ TaskBee/
 
 ### Реализовано
 
-| Требование | Реализация |
-|------------|------------|
-| **SPA (Single Page Application)** | React 18 + TypeScript с клиентской маршрутизацией через компоненты |
-| **Сборщик** | **Vite** — современная альтернатива Create React App, мгновенная пересборка |
-| **Визуализация** | **Recharts** — интерактивные графики (BarChart, PieChart), таблицы данных |
-| **Интеграция API** | **React Query** — управление состоянием, кэширование, автоматическое обновление; **Axios** — HTTP-клиент с типизацией |
-| **Компоненты** | Dashboard (панель), StatCard (метрики), OrderStatusChart, ReviewRatingsChart, SpecialistsRatingChart, CategoriesOverview, RecentOrdersTable, LoadingSpinner, ErrorBoundary |
-| **Стилизация** | CSS Modules + gradient, responsive grid, мобильная оптимизация |
-| **Docker** | Многоступенчатая сборка: Node 18 (builder) + Nginx Alpine (runtime); финальный образ **~20 МБ** (vs 1 ГБ+ с полным Node.js) |
-| **Nginx** | Reverse proxy, Gzip-сжатие, кэширование статики, security headers, SPA routing |
-| **Окружение** | `.env` с `VITE_API_BASE_URL`, Vite proxy для dev-режима (`/api` → `http://backend:5000`) |
+
+| Требование                        | Реализация                                                                                                                                                                 |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SPA (Single Page Application)** | React 18 + TypeScript с клиентской маршрутизацией через компоненты                                                                                                         |
+| **Сборщик**                       | **Vite** — современная альтернатива Create React App, мгновенная пересборка                                                                                                |
+| **Визуализация**                  | **Recharts** — интерактивные графики (BarChart, PieChart), таблицы данных                                                                                                  |
+| **Интеграция API**                | **React Query** — управление состоянием, кэширование, автоматическое обновление; **Axios** — HTTP-клиент с типизацией                                                      |
+| **Компоненты**                    | Dashboard (панель), StatCard (метрики), OrderStatusChart, ReviewRatingsChart, SpecialistsRatingChart, CategoriesOverview, RecentOrdersTable, LoadingSpinner, ErrorBoundary |
+| **Стилизация**                    | CSS Modules + gradient, responsive grid, мобильная оптимизация                                                                                                             |
+| **Docker**                        | Многоступенчатая сборка: Node 18 (builder) + Nginx Alpine (runtime); финальный образ **~20 МБ** (vs 1 ГБ+ с полным Node.js)                                                |
+| **Nginx**                         | Reverse proxy, Gzip-сжатие, кэширование статики, security headers, SPA routing                                                                                             |
+| **Окружение**                     | `.env` с `VITE_API_BASE_URL`, Vite proxy для dev-режима (`/api` → `http://backend:5000`)                                                                                   |
+
 
 ### Структура frontend
 
@@ -219,4 +221,85 @@ GET  /api/v1/services                → Услуги (для перекрёст
 }
 ```
 
+---
+
+## Лабораторная работа: тестирование и мониторинг распределённой системы
+
+### 1) Автоматизированные тесты (Unit + Integration)
+
+- Добавлены тестовые зависимости в `backend/requirements.txt`: `pytest`, `pytest-cov`, `requests-mock`, `factory-boy`.
+- Добавлен `backend/pytest.ini` c настройками `--tb=short`, `log_cli`.
+- Добавлены тесты:
+  - `backend/tests/test_auth_schema_and_model.py` — unit-проверки схемы регистрации и модели пользователя с ролью.
+  - `backend/tests/test_auth_api.py` — integration-сценарий `register -> login -> me`.
+  - `backend/tests/test_discovery_integration.py` — integration discovery с Redis fallback.
+  - `backend/tests/test_metrics_endpoint.py` — доступность Prometheus-метрик.
+
+Запуск:
+
+```bash
+cd backend
+pytest --cov=. --cov-report=html --cov-report=term-missing
+```
+
+Отчёт покрытия: `backend/htmlcov/index.html`.
+
+### 2) Нагрузочное тестирование (Locust)
+
+- Добавлен сценарий `load_test/locustfile.py` под TaskBee:
+  - `GET /api/v1/stats/summary`
+  - `GET /api/v1/orders`
+  - `GET /api/v1/discovery/services`
+  - `POST /api/v1/matching/recommendations`
+  - `GET /api/v1/generator/status`
+- Добавлены зависимости: `load_test/requirements.txt`.
+
+Запуск:
+
+```bash
+pip install -r load_test/requirements.txt
+locust -f load_test/locustfile.py --host http://localhost:5000
+```
+
+### 3) Мониторинг и наблюдаемость (VictoriaMetrics)
+
+- Добавлены метрики в backend:
+  - `http_requests_total`
+  - `http_request_duration_seconds`
+  - `matching_rpc_requests_total`
+  - `matching_candidate_count`
+  - `matching_top_score`
+  - `generator_status_checks_total`
+  - `generator_reachable`
+- Экспорт метрик: `GET /metrics`.
+- В `docker-compose.yml` добавлены:
+  - `victoriametrics` (порт `8428`)
+  - `vmagent` (scrape backend `/metrics` и remote write в VictoriaMetrics)
+- Конфиг scrape: `monitoring/prometheus.yml`.
+
+Проверка:
+
+1. Откройте `http://localhost:8428/vmui`.
+2. Примеры запросов:
+  - `rate(http_requests_total{endpoint="/api/v1/matching/recommendations"}[5m])`
+  - `histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{endpoint="/api/v1/stats/summary"}[5m])) by (le))`
+  - `sum(rate(matching_rpc_requests_total[5m])) by (source)`
+  - `generator_reachable`
+
+### 4) CI для тестов
+
+- Workflow `.github/workflows/tests.yml` обновлён:
+  - запускает `pytest --cov`
+  - использует изолированную in-memory БД (`TEST_DATABASE_URL=sqlite+pysqlite:///:memory:`).
+
+### 5) Безопасность и аудит
+
+- Добавлен аудит auth-операций в `backend/api/v1/auth.py` (`register_success`, `login_success`, `login_failed`).
+- Добавлен security workflow `.github/workflows/security.yml` с проверкой `bandit`.
+- Пример локальной проверки Docker-образов (опционально):
+
+```bash
+trivy image taskbee-backend:latest
+trivy image taskbee-frontend:latest
+```
 
